@@ -71,9 +71,9 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.zip.InflaterInputStream;
 
-import org.spongycastle.cms.CMSEnvelopedData;
-import org.spongycastle.cms.RecipientInformation;
-import org.spongycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
+import org.bouncycastle.cms.CMSEnvelopedData;
+import org.bouncycastle.cms.RecipientInformation;
+import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 
 import com.aowagie.text.ExceptionConverter;
 import com.aowagie.text.PageSize;

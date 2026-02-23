@@ -1,12 +1,12 @@
 package com.aowagie.text.pdf.bouncycastle;
 
-import org.spongycastle.crypto.BlockCipher;
-import org.spongycastle.crypto.BufferedBlockCipher;
-import org.spongycastle.crypto.CipherParameters;
-import org.spongycastle.crypto.DataLengthException;
-import org.spongycastle.crypto.InvalidCipherTextException;
-import org.spongycastle.crypto.OutputLengthException;
-import org.spongycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StreamCipher;
 
 /**
  * A wrapper class that allows block ciphers to be used to process data in
@@ -43,18 +43,17 @@ public class DefaultBufferedBlockCipher
      *
      * @param cipher the underlying block cipher this buffering object wraps.
      */
-    public DefaultBufferedBlockCipher(
-        BlockCipher     cipher)
-    {
+    public DefaultBufferedBlockCipher(final BlockCipher cipher) {
+
+    	super(cipher);
+
         this.cipher = cipher;
 
-        if (cipher instanceof MultiBlockCipher)
-        {
+        if (cipher instanceof MultiBlockCipher) {
             this.mbCipher = (MultiBlockCipher)cipher;
             buf = new byte[mbCipher.getMultiBlockSize()];
         }
-        else
-        {
+        else {
             this.mbCipher = null;
             buf = new byte[cipher.getBlockSize()];
         }
@@ -64,10 +63,10 @@ public class DefaultBufferedBlockCipher
         //
         // check if we can handle partial blocks on doFinal.
         //
-        String  name = cipher.getAlgorithmName();
-        int     idx = name.indexOf('/') + 1;
+        final String  name = cipher.getAlgorithmName();
+        final int     idx = name.indexOf('/') + 1;
 
-        pgpCFB = (idx > 0 && name.startsWith("PGP", idx));
+        pgpCFB = idx > 0 && name.startsWith("PGP", idx);
 
         if (pgpCFB || cipher instanceof StreamCipher)
         {
@@ -75,7 +74,7 @@ public class DefaultBufferedBlockCipher
         }
         else
         {
-            partialBlockOkay = (idx > 0 && (name.startsWith("OpenPGP", idx)));
+            partialBlockOkay = idx > 0 && name.startsWith("OpenPGP", idx);
         }
     }
 
@@ -84,7 +83,8 @@ public class DefaultBufferedBlockCipher
      *
      * @return the cipher this object wraps.
      */
-    public BlockCipher getUnderlyingCipher()
+    @Override
+	public BlockCipher getUnderlyingCipher()
     {
         return cipher;
     }
@@ -98,9 +98,10 @@ public class DefaultBufferedBlockCipher
      * @exception IllegalArgumentException if the params argument is
      * inappropriate.
      */
-    public void init(
-        boolean             forEncryption,
-        CipherParameters    params)
+    @Override
+	public void init(
+        final boolean             forEncryption,
+        final CipherParameters    params)
         throws IllegalArgumentException
     {
         this.forEncryption = forEncryption;
@@ -115,40 +116,35 @@ public class DefaultBufferedBlockCipher
      *
      * @return the blocksize for the underlying cipher.
      */
-    public int getBlockSize()
+    @Override
+	public int getBlockSize()
     {
         return cipher.getBlockSize();
     }
 
     /**
-     * return the size of the output buffer required for an update 
+     * return the size of the output buffer required for an update
      * an input of len bytes.
      *
      * @param len the length of the input.
      * @return the space required to accommodate a call to update
      * with len bytes of input.
      */
-    public int getUpdateOutputSize(
-        int len)
+    @Override
+	public int getUpdateOutputSize(
+        final int len)
     {
-        int total       = len + bufOff;
+        final int total       = len + bufOff;
         int leftOver;
 
-        if (pgpCFB)
-        {
-            if (forEncryption)
-            {
-                leftOver = total % buf.length - (cipher.getBlockSize() + 2);
-            }
-            else
-            {
-                leftOver = total % buf.length;
-            }
-        }
-        else
-        {
-            leftOver    = total % buf.length;
-        }
+        if (pgpCFB && forEncryption)
+		{
+		    leftOver = total % buf.length - (cipher.getBlockSize() + 2);
+		}
+		else
+		{
+		    leftOver = total % buf.length;
+		}
 
         return total - leftOver;
     }
@@ -161,12 +157,13 @@ public class DefaultBufferedBlockCipher
      * @return the space required to accommodate a call to update and doFinal
      * with 'length' bytes of input.
      */
-    public int getOutputSize(
-        int length)
+    @Override
+	public int getOutputSize(
+        final int length)
     {
         if (pgpCFB && forEncryption)
         {
-            return length + bufOff + (cipher.getBlockSize() + 2);
+            return length + bufOff + cipher.getBlockSize() + 2;
         }
 
         // Note: Can assume partialBlockOkay is true for purposes of this calculation
@@ -183,10 +180,11 @@ public class DefaultBufferedBlockCipher
      * @exception DataLengthException if there isn't enough space in out.
      * @exception IllegalStateException if the cipher isn't initialised.
      */
-    public int processByte(
-        byte        in,
-        byte[]      out,
-        int         outOff)
+    @Override
+	public int processByte(
+        final byte        in,
+        final byte[]      out,
+        final int         outOff)
         throws DataLengthException, IllegalStateException
     {
         int         resultLen = 0;
@@ -214,12 +212,13 @@ public class DefaultBufferedBlockCipher
      * @exception DataLengthException if there isn't enough space in out.
      * @exception IllegalStateException if the cipher isn't initialised.
      */
-    public int processBytes(
-        byte[]      in,
+    @Override
+	public int processBytes(
+        final byte[]      in,
         int         inOff,
         int         len,
-        byte[]      out,
-        int         outOff)
+        final byte[]      out,
+        final int         outOff)
         throws DataLengthException, IllegalStateException
     {
         if (len < 0)
@@ -227,19 +226,16 @@ public class DefaultBufferedBlockCipher
             throw new IllegalArgumentException("Can't have a negative input length!");
         }
 
-        int blockSize   = getBlockSize();
-        int length      = getUpdateOutputSize(len);
-        
-        if (length > 0)
-        {
-            if ((outOff + length) > out.length)
-            {
-                throw new OutputLengthException("output buffer too short");
-            }
-        }
+        final int blockSize   = getBlockSize();
+        final int length      = getUpdateOutputSize(len);
+
+        if (length > 0 && outOff + length > out.length)
+		{
+		    throw new OutputLengthException("output buffer too short");
+		}
 
         int resultLen = 0;
-        int gapLen = buf.length - bufOff;
+        final int gapLen = buf.length - bufOff;
 
         if (len > gapLen)
         {
@@ -253,13 +249,13 @@ public class DefaultBufferedBlockCipher
 
             if (mbCipher != null)
             {
-                int blockCount = len / mbCipher.getMultiBlockSize();
+                final int blockCount = len / mbCipher.getMultiBlockSize();
 
                 if (blockCount > 0)
                 {
                     resultLen += mbCipher.processBlocks(in, inOff, blockCount, out, outOff + resultLen);
 
-                    int processed = blockCount * mbCipher.getMultiBlockSize();
+                    final int processed = blockCount * mbCipher.getMultiBlockSize();
 
                     len -= processed;
                     inOff += processed;
@@ -304,9 +300,10 @@ public class DefaultBufferedBlockCipher
      * @exception DataLengthException if the input is not block size
      * aligned.
      */
-    public int doFinal(
-        byte[]  out,
-        int     outOff)
+    @Override
+	public int doFinal(
+        final byte[]  out,
+        final int     outOff)
         throws DataLengthException, IllegalStateException, InvalidCipherTextException
     {
         try
@@ -343,7 +340,8 @@ public class DefaultBufferedBlockCipher
      * Reset the buffer and cipher. After resetting the object is in the same
      * state as it was after the last init (if there was one).
      */
-    public void reset()
+    @Override
+	public void reset()
     {
         //
         // clean the buffer.

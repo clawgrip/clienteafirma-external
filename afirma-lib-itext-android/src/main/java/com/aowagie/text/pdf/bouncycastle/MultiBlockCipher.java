@@ -1,7 +1,7 @@
 package com.aowagie.text.pdf.bouncycastle;
 
-import org.spongycastle.crypto.BlockCipher;
-import org.spongycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.DataLengthException;
 
 /**
  * Base interface for a cipher engine capable of processing multiple blocks at a time.

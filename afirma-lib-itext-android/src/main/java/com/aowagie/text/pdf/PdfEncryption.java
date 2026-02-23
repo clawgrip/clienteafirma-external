@@ -60,15 +60,15 @@ import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 
-import org.spongycastle.crypto.BlockCipher;
-import org.spongycastle.crypto.BufferedBlockCipher;
-import org.spongycastle.crypto.InvalidCipherTextException;
-import org.spongycastle.crypto.engines.AESEngine;
-import org.spongycastle.crypto.modes.CBCBlockCipher;
-import org.spongycastle.crypto.paddings.BlockCipherPadding;
-import org.spongycastle.crypto.paddings.PaddedBufferedBlockCipher;
-import org.spongycastle.crypto.params.KeyParameter;
-import org.spongycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.paddings.BlockCipherPadding;
+import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 
 import com.aowagie.text.ExceptionConverter;
 import com.aowagie.text.pdf.bouncycastle.DefaultBufferedBlockCipher;
