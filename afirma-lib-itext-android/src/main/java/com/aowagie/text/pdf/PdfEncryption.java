@@ -62,6 +62,7 @@ import java.util.Arrays;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -71,7 +72,6 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
 import com.aowagie.text.ExceptionConverter;
-import com.aowagie.text.pdf.bouncycastle.DefaultBufferedBlockCipher;
 import com.aowagie.text.pdf.crypto.ARCFOUREncryption;
 import com.aowagie.text.pdf.crypto.IVGenerator;
 
@@ -87,7 +87,7 @@ class PdfEncryption {
 	private static final int STANDARD_ENCRYPTION_128 = 3;
 
 	private static final int AES_128 = 4;
-	
+
 	public static final int AES_256_V3 = 6;
 
 	private static final byte[] pad = { (byte) 0x28, (byte) 0xBF, (byte) 0x4E,
@@ -105,32 +105,32 @@ class PdfEncryption {
 			(byte) 255, (byte) 255 };
 
 	/** The encryption key for a particular object/generation */
-	private byte key[];
+	private byte[] key;
 
 	/** The encryption key length for a particular object/generation */
 	private int keySize;
 
 	/** The global encryption key */
-	private byte mkey[];
+	private byte[] mkey;
 
 	/** Work area to prepare the object/generation bytes */
-	private final byte extra[] = new byte[5];
+	private final byte[] extra = new byte[5];
 
 	/** The message digest algorithm MD5 */
 	private MessageDigest md5;
 
 	/** The encryption key for the owner */
-	private byte ownerKey[] = new byte[32];
+	private byte[] ownerKey = new byte[32];
 
 	/** The encryption key for the user */
-	byte userKey[] = new byte[32];
+	byte[] userKey = new byte[32];
 
 	/** The public key security handler for certificate encryption */
 	private PdfPublicKeySecurityHandler publicKeyHandler = null;
 
 	int permissions;
 
-	private byte documentID[];
+	private byte[] documentID;
 
 	private static long seq = System.currentTimeMillis();
 
@@ -142,7 +142,7 @@ class PdfEncryption {
 	private int keyLength;
 
 	private boolean encryptMetadata;
-	
+
     byte[] oeKey;
     byte[] ueKey;
     byte[] perms;
@@ -247,8 +247,8 @@ class PdfEncryption {
 		return this.embeddedFilesOnly;
 	}
 
-	private byte[] padPassword(final byte userPassword[]) {
-		final byte userPad[] = new byte[32];
+	private byte[] padPassword(final byte[] userPassword) {
+		final byte[] userPad = new byte[32];
 		if (userPassword == null) {
 			System.arraycopy(pad, 0, userPad, 0, 32);
 		} else {
@@ -263,10 +263,10 @@ class PdfEncryption {
 		return userPad;
 	}
 
-	private byte[] computeOwnerKey(final byte userPad[], final byte ownerPad[]) {
+	private byte[] computeOwnerKey(final byte[] userPad, final byte[] ownerPad) {
 		final byte ownerKey[] = new byte[32];
 
-		final byte digest[] = this.md5.digest(ownerPad);
+		final byte[] digest = this.md5.digest(ownerPad);
 		if (this.revision == STANDARD_ENCRYPTION_128 || this.revision == AES_128) {
 			final byte mkey[] = new byte[this.keyLength / 8];
 			// only use for the input as many bit as the key consists of
@@ -297,8 +297,8 @@ class PdfEncryption {
 	 * @param ownerKey Owner key
 	 * @param permissions Permissions
 	 */
-	private void setupGlobalEncryptionKey(final byte[] documentID, final byte userPad[],
-			final byte ownerKey[], final int permissions) {
+	private void setupGlobalEncryptionKey(final byte[] documentID, final byte[] userPad,
+			final byte[] ownerKey, final int permissions) {
 		this.documentID = documentID;
 		this.ownerKey = ownerKey;
 		this.permissions = permissions;
@@ -310,7 +310,7 @@ class PdfEncryption {
 		this.md5.update(userPad);
 		this.md5.update(ownerKey);
 
-		final byte ext[] = new byte[4];
+		final byte[] ext = new byte[4];
 		ext[0] = (byte) permissions;
 		ext[1] = (byte) (permissions >> 8);
 		ext[2] = (byte) (permissions >> 16);
@@ -323,7 +323,7 @@ class PdfEncryption {
 			this.md5.update(metadataPad);
 		}
 
-		final byte digest[] = new byte[this.mkey.length];
+		final byte[] digest = new byte[this.mkey.length];
 		System.arraycopy(this.md5.digest(), 0, digest, 0, this.mkey.length);
 
 		// only use the really needed bits as input for the hash
@@ -344,7 +344,7 @@ class PdfEncryption {
 	private void setupUserKey() {
 		if (this.revision == STANDARD_ENCRYPTION_128 || this.revision == AES_128) {
 			this.md5.update(pad);
-			final byte digest[] = this.md5.digest(this.documentID);
+			final byte[] digest = this.md5.digest(this.documentID);
 			System.arraycopy(digest, 0, this.userKey, 0, 16);
 			for (int k = 16; k < 32; ++k) {
 				this.userKey[k] = 0;
@@ -364,13 +364,13 @@ class PdfEncryption {
 
 	// gets keylength and revision and uses revision to choose the initial values
 	// for permissions
-	public void setupAllKeys(final byte userPassword[], byte ownerPassword[],
+	public void setupAllKeys(final byte[] userPassword, byte[] ownerPassword,
 			int permissions) {
 		if (ownerPassword == null || ownerPassword.length == 0) {
 			ownerPassword = this.md5.digest(createDocumentId());
 		}
-		permissions |= (this.revision == STANDARD_ENCRYPTION_128 || this.revision == AES_128
-				|| this.revision == AES_256_V3) ? 0xfffff0c0 : 0xffffffc0;
+		permissions |= this.revision == STANDARD_ENCRYPTION_128 || this.revision == AES_128
+				|| this.revision == AES_256_V3 ? 0xfffff0c0 : 0xffffffc0;
 		permissions &= 0xfffffffc;
 		this.permissions = permissions;
 		this.documentID = createDocumentId();
@@ -396,7 +396,7 @@ class PdfEncryption {
 	}
 
 	public static byte[] createDocumentId() {
-		MessageDigest md5;
+		final MessageDigest md5;
 		try {
 			md5 = MessageDigest.getInstance("MD5");
 		} catch (final Exception e) {
@@ -408,12 +408,12 @@ class PdfEncryption {
 		return md5.digest(s.getBytes());
 	}
 
-	public void setupByUserPassword(final byte[] documentID, final byte userPassword[],
-			final byte ownerKey[], final int permissions) {
+	public void setupByUserPassword(final byte[] documentID, final byte[] userPassword,
+			final byte[] ownerKey, final int permissions) {
 		setupByUserPad(documentID, padPassword(userPassword), ownerKey,
 				permissions);
 	}
-	
+
 	/**
 	 * implements step e of Algorithm 2.A: Retrieving the file encryption key from
 	 * an encrypted document in order to decrypt it (revision 6 and later) - ISO
@@ -426,7 +426,7 @@ class PdfEncryption {
 		final byte[] hashAlg2B = hashAlg2B(userPassword, Arrays.copyOfRange(uValue, 40, 48), null);
 		try {
 			this.key = doAes(ueValue, new byte[16], hashAlg2B, null, false);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new GeneralSecurityException(e);
 		}
 
@@ -436,18 +436,18 @@ class PdfEncryption {
 		this.permissions = permissions;
 	}
 
-	private void setupByUserPad(final byte[] documentID, final byte userPad[],
-			final byte ownerKey[], final int permissions) {
+	private void setupByUserPad(final byte[] documentID, final byte[] userPad,
+			final byte[] ownerKey, final int permissions) {
 		setupGlobalEncryptionKey(documentID, userPad, ownerKey, permissions);
 		setupUserKey();
 	}
 
-	public void setupByOwnerPassword(final byte[] documentID, final byte ownerPassword[],
-			final byte userKey[], final byte ownerKey[], final int permissions) {
+	public void setupByOwnerPassword(final byte[] documentID, final byte[] ownerPassword,
+			final byte[] userKey, final byte[] ownerKey, final int permissions) {
 		setupByOwnerPad(documentID, padPassword(ownerPassword), userKey,
 				ownerKey, permissions);
 	}
-	
+
     /**
      * implements step d of Algorithm 2.A: Retrieving the file encryption key from an encrypted document in order to
      * decrypt it (revision 6 and later) - ISO 32000-2 section 7.6.4.3.3
@@ -459,7 +459,7 @@ class PdfEncryption {
         final byte[] hashAlg2B = hashAlg2B(ownerPassword, Arrays.copyOfRange(oValue, 40, 48), uValue);
         try {
 			this.key = doAes(oeValue, new byte[16], hashAlg2B, null, false);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new GeneralSecurityException(e);
 		}
 
@@ -469,16 +469,16 @@ class PdfEncryption {
         this.permissions = permissions;
     }
 
-	private void setupByOwnerPad(final byte[] documentID, final byte ownerPad[],
-			final byte userKey[], final byte ownerKey[], final int permissions) {
-		final byte userPad[] = computeOwnerKey(ownerKey, ownerPad); // userPad will
+	private void setupByOwnerPad(final byte[] documentID, final byte[] ownerPad,
+			final byte[] userKey, final byte[] ownerKey, final int permissions) {
+		final byte[] userPad = computeOwnerKey(ownerKey, ownerPad); // userPad will
 																// be set in
 																// this.ownerKey
 		setupGlobalEncryptionKey(documentID, userPad, ownerKey, permissions); // step
 																				// 3
 		setupUserKey();
 	}
-	
+
     /**
      * implements step f of Algorithm 2.A: Retrieving the file encryption key from an encrypted document in order to
      * decrypt it (revision 6 and later) - ISO 32000-2 section 7.6.4.3.3
@@ -488,12 +488,12 @@ class PdfEncryption {
         byte[] decPerms;
         try {
         	decPerms = doAes(permsValue, new byte[16], this.key, null, false);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new GeneralSecurityException(e);
 		}
 
-        this.permissions = (decPerms[0] & 0xff) | ((decPerms[1] & 0xff) << 8)
-                | ((decPerms[2] & 0xff) << 16) | ((decPerms[2] & 0xff) << 24);
+        this.permissions = decPerms[0] & 0xff | (decPerms[1] & 0xff) << 8
+                | (decPerms[2] & 0xff) << 16 | (decPerms[2] & 0xff) << 24;
         this.encryptMetadata = decPerms[8] == (byte) 'T';
 
         return decPerms[9] == (byte) 'a' && decPerms[10] == (byte) 'd' && decPerms[11] == (byte) 'b';
@@ -505,11 +505,11 @@ class PdfEncryption {
 	}
 
 	public void setHashKey(final int number, final int generation) {
-		
+
         if (this.revision >= AES_256_V3) {
             return;
         }
-		
+
 		this.md5.reset(); // added by ujihara
 		this.extra[0] = (byte) number;
 		this.extra[1] = (byte) (number >> 8);
@@ -702,9 +702,8 @@ class PdfEncryption {
 	int calculateStreamSize(final int n) {
 		if (this.revision == AES_128 || this.revision == AES_256_V3) {
 			return (n & 0x7ffffff0) + 32;
-		} else {
-			return n;
 		}
+		return n;
 	}
 
 	byte[] encryptByteArray(final byte[] b) {
@@ -746,7 +745,7 @@ class PdfEncryption {
 		this.publicKeyHandler.addRecipient(new PdfPublicKeyRecipient(cert,
 				permission));
 	}
-	
+
 	  /**
      * implements Algorithm 8: Computing the encryption dictionary's U (user password) and UE (user encryption) values
      * (Security handlers of revision 6) - ISO 32000-2 section 7.6.4.4.7
@@ -770,7 +769,7 @@ class PdfEncryption {
 
         try {
         	this.ueKey = doAes(this.key, new byte[16], hashAlg2B, null, true);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new GeneralSecurityException(e);
 		}
     }
@@ -798,7 +797,7 @@ class PdfEncryption {
 
         try {
         	this.oeKey = doAes(this.key, new byte[16], hashAlg2B, null, true);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new GeneralSecurityException(e);
 		}
     }
@@ -826,11 +825,11 @@ class PdfEncryption {
 
         try {
         	this.perms = doAes(rawPerms, new byte[16], this.key, null, true);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new GeneralSecurityException(e);
 		}
     }
-    
+
     /**
      * implements Algorithm 2.B: Computing a hash (revision 6 and later) - ISO 32000-2 section 7.6.4.3.4
      */
@@ -861,10 +860,10 @@ class PdfEncryption {
             byte[] e;
             try {
             	e = doAes(k1, Arrays.copyOfRange(k, 16, 32), Arrays.copyOf(k, 16), null, true);
-    		} catch (Exception ex) {
+    		} catch (final Exception ex) {
     			throw new GeneralSecurityException(ex);
     		}
-            
+
             lastEByte = e[e.length - 1] & 0xFF;
 
             switch (new BigInteger(1, Arrays.copyOf(e, 16)).remainder(BigInteger.valueOf(3)).intValue()) {
@@ -888,7 +887,7 @@ class PdfEncryption {
     		final byte[] aesKey,
     		final BlockCipherPadding padding,
     		final boolean forEncryption) throws IOException, InvalidCipherTextException {
-    	
+
     	final BlockCipher engine = new AESEngine();
 
     	// Vector de inicializacion
@@ -929,8 +928,8 @@ class PdfEncryption {
     	final byte[] buf = new byte[16]; // Buffer de entrada
     	final byte[] obuf = new byte[512]; // Buffer de salida
 
-    	InputStream bin = new ByteArrayInputStream(data);
-    	ByteArrayOutputStream bout = new ByteArrayOutputStream();
+    	final InputStream bin = new ByteArrayInputStream(data);
+    	final ByteArrayOutputStream bout = new ByteArrayOutputStream();
     	try {
     		while ((noBytesRead = bin.read(buf)) >= 0) {
     			noBytesProcessed = aesCipher.processBytes(buf, 0, noBytesRead, obuf, 0);
@@ -944,8 +943,8 @@ class PdfEncryption {
     		return bout.toByteArray();
     	}
     	finally {
-    		try { bin.close(); } catch (Exception e) { /* No hacemos nada */ }
-    		try { bout.close(); } catch (Exception e) { /* No hacemos nada */ }
+    		try { bin.close(); } catch (final Exception e) { /* No hacemos nada */ }
+    		try { bout.close(); } catch (final Exception e) { /* No hacemos nada */ }
     	}
     }
 }

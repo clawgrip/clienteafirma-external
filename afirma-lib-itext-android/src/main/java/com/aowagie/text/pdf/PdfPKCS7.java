@@ -135,13 +135,14 @@ public class PdfPKCS7 {
     private X509Certificate signCert;
     private byte[] digest;
     private MessageDigest messageDigest;
-    private String digestAlgorithm, digestEncryptionAlgorithm;
+    private String digestAlgorithm;
+    private String  digestEncryptionAlgorithm;
     private Signature sig;
-    private byte RSAdata[];
+    private byte[] rsaData;
     private boolean verified;
     private boolean verifyResult;
-    private byte externalDigest[];
-    private byte externalRSAdata[];
+    private byte[] externalDigest;
+    private byte[] externalRSAdata;
     private String provider;
 
     private static final String ID_PKCS7_DATA = "1.2.840.113549.1.7.1"; //$NON-NLS-1$
@@ -482,7 +483,7 @@ public class PdfPKCS7 {
             	else {
             		throw new IllegalArgumentException("El objeto ASN.1 no es ni BER ni BER ni DER: " + encodable.getClass().getName()); //$NON-NLS-1$
             	}
-                this.RSAdata = rsaDataContent.getOctets();
+                this.rsaData = rsaDataContent.getOctets();
             }
 
             // The SignerInfos:
@@ -566,7 +567,7 @@ public class PdfPKCS7 {
                     this.timeStampToken = new TimeStampToken(contentInfo);
                 }
             }
-            if (this.RSAdata != null || this.digestAttr != null) {
+            if (this.rsaData != null || this.digestAttr != null) {
                 if (provider == null || provider.startsWith("SunPKCS11")) { //$NON-NLS-1$
                 	this.messageDigest = MessageDigest.getInstance(getDigestAlgorithmName(getHashAlgorithm()));
 				}
@@ -657,7 +658,7 @@ public class PdfPKCS7 {
             }
         }
         if (hasRSAdata) {
-            this.RSAdata = new byte[0];
+            this.rsaData = new byte[0];
             if (provider == null || provider.startsWith("SunPKCS11")) { //$NON-NLS-1$
 				this.messageDigest = MessageDigest.getInstance(getHashAlgorithm());
 			}
@@ -686,7 +687,7 @@ public class PdfPKCS7 {
      * @throws SignatureException on error
      */
     void update(final byte[] buf, final int off, final int len) throws SignatureException {
-        if (this.RSAdata != null || this.digestAttr != null) {
+        if (this.rsaData != null || this.digestAttr != null) {
 			this.messageDigest.update(buf, off, len);
 		}
         else {
@@ -917,12 +918,12 @@ public class PdfPKCS7 {
     /**
      * Sets the digest/signature to an external calculated value.
      * @param digest the digest. This is the actual signature
-     * @param RSAdata the extra data that goes into the data tag in PKCS#7
+     * @param rsaData the extra data that goes into the data tag in PKCS#7
      * @param digestEncryptionAlgorithm the encryption algorithm. It may must be <CODE>null</CODE> if the <CODE>digest</CODE>
      * is also <CODE>null</CODE>. If the <CODE>digest</CODE> is not <CODE>null</CODE>
      * then it may be "RSA" or "DSA"
      */
-    public void setExternalDigest(final byte digest[], final byte RSAdata[], final String digestEncryptionAlgorithm) {
+    public void setExternalDigest(final byte[] digest, final byte RSAdata[], final String digestEncryptionAlgorithm) {
         this.externalDigest = digest;
         this.externalRSAdata = RSAdata;
         if (digestEncryptionAlgorithm != null) {
@@ -962,13 +963,13 @@ public class PdfPKCS7 {
         try {
             if (this.externalDigest != null) {
                 this.digest = this.externalDigest;
-                if (this.RSAdata != null) {
-					this.RSAdata = this.externalRSAdata;
+                if (this.rsaData != null) {
+					this.rsaData = this.externalRSAdata;
 				}
             }
-            else if (this.externalRSAdata != null && this.RSAdata != null) {
-                this.RSAdata = this.externalRSAdata;
-                this.sig.update(this.RSAdata);
+            else if (this.externalRSAdata != null && this.rsaData != null) {
+                this.rsaData = this.externalRSAdata;
+                this.sig.update(this.rsaData);
                 try {
                 	this.digest = this.sig.sign();
                 }
@@ -977,9 +978,9 @@ public class PdfPKCS7 {
                 }
             }
             else {
-                if (this.RSAdata != null) {
-                    this.RSAdata = this.messageDigest.digest();
-                    this.sig.update(this.RSAdata);
+                if (this.rsaData != null) {
+                    this.rsaData = this.messageDigest.digest();
+                    this.sig.update(this.rsaData);
                 }
                 try {
                 	this.digest = this.sig.sign();
@@ -1001,8 +1002,8 @@ public class PdfPKCS7 {
             // Create the contentInfo.
             ASN1EncodableVector v = new ASN1EncodableVector();
             v.add(new ASN1ObjectIdentifier(ID_PKCS7_DATA));
-            if (this.RSAdata != null) {
-				v.add(new DERTaggedObject(0, new DEROctetString(this.RSAdata)));
+            if (this.rsaData != null) {
+				v.add(new DERTaggedObject(0, new DEROctetString(this.rsaData)));
 			}
             final DERSequence contentinfo = new DERSequence(v);
 
@@ -1470,14 +1471,14 @@ public class PdfPKCS7 {
 		}
         if (this.sigAttr != null) {
             this.sig.update(this.sigAttr);
-            if (this.RSAdata != null) {
-                final byte msd[] = this.messageDigest.digest();
+            if (this.rsaData != null) {
+                final byte[] msd = this.messageDigest.digest();
                 this.messageDigest.update(msd);
             }
             this.verifyResult = Arrays.equals(this.messageDigest.digest(), this.digestAttr) && this.sig.verify(this.digest);
         }
         else {
-            if (this.RSAdata != null) {
+            if (this.rsaData != null) {
 				this.sig.update(this.messageDigest.digest());
 			}
             this.verifyResult = this.sig.verify(this.digest);
