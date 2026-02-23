@@ -264,11 +264,11 @@ class PdfEncryption {
 	}
 
 	private byte[] computeOwnerKey(final byte[] userPad, final byte[] ownerPad) {
-		final byte ownerKey[] = new byte[32];
+		final byte[] ownerKey = new byte[32];
 
 		final byte[] digest = this.md5.digest(ownerPad);
 		if (this.revision == STANDARD_ENCRYPTION_128 || this.revision == AES_128) {
-			final byte mkey[] = new byte[this.keyLength / 8];
+			final byte[] mkey = new byte[this.keyLength / 8];
 			// only use for the input as many bit as the key consists of
 			for (int k = 0; k < 50; ++k) {
 				System.arraycopy(this.md5.digest(digest), 0, digest, 0, mkey.length);
@@ -528,7 +528,7 @@ class PdfEncryption {
 		}
 	}
 
-	public static PdfObject createInfoId(byte id[]) {
+	public static PdfObject createInfoId(byte[] id) {
 		final ByteBuffer buf = new ByteBuffer(90);
 		buf.append('[').append('<');
 		for (int k = 0; k < 16; ++k) {

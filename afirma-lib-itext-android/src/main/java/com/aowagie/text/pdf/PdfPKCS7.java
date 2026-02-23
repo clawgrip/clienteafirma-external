@@ -125,9 +125,10 @@ import com.aowagie.text.ExceptionConverter;
  */
 public class PdfPKCS7 {
 
-    private byte sigAttr[];
-    private byte digestAttr[];
-    private int version, signerversion;
+    private byte[] sigAttr;
+    private byte[] digestAttr;
+    private int version;
+    private int  signerversion;
     private Set<String> digestalgos;
     private Collection<Certificate> certs;
     private Collection<CRL> crls;
@@ -511,7 +512,7 @@ public class PdfPKCS7 {
             // Get the signing certificate
             final ASN1Sequence issuerAndSerialNumber = (ASN1Sequence)signerInfo.getObjectAt(1);
             final BigInteger serialNumber = ((ASN1Integer)issuerAndSerialNumber.getObjectAt(1)).getValue();
-            for (final Object element : this.certs) {
+            for (final Certificate element : this.certs) {
                 final X509Certificate cert = (X509Certificate)element;
                 if (serialNumber.equals(cert.getSerialNumber())) {
                     this.signCert = cert;
@@ -923,7 +924,7 @@ public class PdfPKCS7 {
      * is also <CODE>null</CODE>. If the <CODE>digest</CODE> is not <CODE>null</CODE>
      * then it may be "RSA" or "DSA"
      */
-    public void setExternalDigest(final byte[] digest, final byte RSAdata[], final String digestEncryptionAlgorithm) {
+    public void setExternalDigest(final byte[] digest, final byte[] RSAdata, final String digestEncryptionAlgorithm) {
         this.externalDigest = digest;
         this.externalRSAdata = RSAdata;
         if (digestEncryptionAlgorithm != null) {
@@ -959,7 +960,7 @@ public class PdfPKCS7 {
      * @return byte[] the bytes for the PKCS7SignedData object
      * @since	2.1.6
      */
-    private byte[] getEncodedPKCS7(final byte secondDigest[], final Calendar signingTime, final TSAClient tsaClient, final byte[] ocsp) {
+    private byte[] getEncodedPKCS7(final byte[] secondDigest, final Calendar signingTime, final TSAClient tsaClient, final byte[] ocsp) {
         try {
             if (this.externalDigest != null) {
                 this.digest = this.externalDigest;
@@ -992,9 +993,9 @@ public class PdfPKCS7 {
 
             // Create the set of Hash algorithms
             final ASN1EncodableVector digestAlgorithms = new ASN1EncodableVector();
-            for (final Object element : this.digestalgos) {
+            for (final String element : this.digestalgos) {
                 final ASN1EncodableVector algos = new ASN1EncodableVector();
-                algos.add(new ASN1ObjectIdentifier((String)element));
+                algos.add(new ASN1ObjectIdentifier(element));
                 algos.add(DERNull.INSTANCE);
                 digestAlgorithms.add(new DERSequence(algos));
             }
@@ -1010,8 +1011,8 @@ public class PdfPKCS7 {
             // Get all the certificates
             //
             v = new ASN1EncodableVector();
-            for (final Object element : this.certs) {
-                final ASN1InputStream tempstream = new ASN1InputStream(new ByteArrayInputStream(((X509Certificate)element).getEncoded()));
+            for (final Certificate element : this.certs) {
+                final ASN1InputStream tempstream = new ASN1InputStream(new ByteArrayInputStream(element.getEncoded()));
                 v.add(tempstream.readObject());
             }
 
@@ -1072,7 +1073,7 @@ public class PdfPKCS7 {
 
            if (!this.crls.isEmpty()) {
                 v = new ASN1EncodableVector();
-                for (final Object element : this.crls) {
+                for (final CRL element : this.crls) {
                     final ASN1InputStream t = new ASN1InputStream(new ByteArrayInputStream(((X509CRL)element).getEncoded()));
                     v.add(t.readObject());
                 }
@@ -1135,7 +1136,7 @@ public class PdfPKCS7 {
 
 
 
-    private DERSet getAuthenticatedAttributeSet(final byte secondDigest[], final Calendar signingTime, final byte[] ocsp) {
+    private DERSet getAuthenticatedAttributeSet(final byte[] secondDigest, final Calendar signingTime, final byte[] ocsp) {
         try {
             final ASN1EncodableVector attribute = new ASN1EncodableVector();
             ASN1EncodableVector v = new ASN1EncodableVector();
@@ -1170,7 +1171,7 @@ public class PdfPKCS7 {
                 v = new ASN1EncodableVector();
                 v.add(new ASN1ObjectIdentifier(ID_ADBE_REVOCATION));
                 final ASN1EncodableVector v2 = new ASN1EncodableVector();
-                for (final Object element : this.crls) {
+                for (final CRL element : this.crls) {
                     final ASN1InputStream t = new ASN1InputStream(new ByteArrayInputStream(((X509CRL)element).getEncoded()));
                     v2.add(t.readObject());
                 }
