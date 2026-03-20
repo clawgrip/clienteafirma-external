@@ -224,8 +224,8 @@ public class PdfPKCS7 {
         digestNames.put("1.3.36.3.3.1.2", "RIPEMD160"); //$NON-NLS-1$ //$NON-NLS-2$
         digestNames.put("1.3.36.3.3.1.4", "RIPEMD256"); //$NON-NLS-1$ //$NON-NLS-2$
 
-        algorithmNames.put("1.2.840.113549.1.1.1", "RSA"); //$NON-NLS-1$ //$NON-NLS-2$
-        algorithmNames.put("1.2.840.10040.4.1", "DSA"); //$NON-NLS-1$ //$NON-NLS-2$
+        algorithmNames.put(ID_RSA, "RSA"); //$NON-NLS-1$
+        algorithmNames.put(ID_DSA, "DSA"); //$NON-NLS-1$
         algorithmNames.put("1.2.840.113549.1.1.2", "RSA"); //$NON-NLS-1$ //$NON-NLS-2$
         algorithmNames.put("1.2.840.113549.1.1.4", "RSA"); //$NON-NLS-1$ //$NON-NLS-2$
         algorithmNames.put("1.2.840.113549.1.1.5", "RSA"); //$NON-NLS-1$ //$NON-NLS-2$

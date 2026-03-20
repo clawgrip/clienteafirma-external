@@ -222,19 +222,19 @@ class PdfPublicKeySecurityHandler {
 
     public PdfArray getEncodedRecipients() throws IOException,
                                          GeneralSecurityException {
-        PdfArray EncodedRecipients = new PdfArray();
+        PdfArray encodedRecipients = new PdfArray();
         byte[] cms = null;
         for (int i=0; i<this.recipients.size(); i++) {
 			try {
 			    cms = getEncodedRecipient(i);
-			    EncodedRecipients.add(new PdfLiteral(PdfContentByte.escapeString(cms)));
+			    encodedRecipients.add(new PdfLiteral(PdfContentByte.escapeString(cms)));
 			}
 			catch (final GeneralSecurityException | IOException e) {
-			    EncodedRecipients = null;
+			    encodedRecipients = null;
 			}
 		}
 
-        return EncodedRecipients;
+        return encodedRecipients;
     }
 
     private ASN1Primitive createDERForRecipient(final byte[] in, final X509Certificate cert)
